@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace CSharpUnions
 {
@@ -11,7 +12,47 @@ namespace CSharpUnions
 
         public struct StringOrIntContainer
         {
+            [JsonConverter(typeof(ValueUnionConverter))]
             public StringOrInt Value { get; set; }
+        }
+
+        private class ValueUnionConverter: JsonConverter<StringOrInt>
+        {
+            public override StringOrInt Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            {
+                try
+                {
+                    return JsonSerializer.Deserialize<string>(ref reader);
+                }
+
+                catch { }
+                try
+                {
+                    return JsonSerializer.Deserialize<int>(ref reader);
+                }
+
+                catch { }
+
+                throw new Exception("Failed to deserialize union");
+            }
+
+            public override void Write(Utf8JsonWriter writer, StringOrInt value, JsonSerializerOptions options)
+            {
+                Type[] unionTypes = [ typeof(string), typeof(int) ];
+
+                var type = value.Value.GetType();
+
+                foreach (var unionType in unionTypes)
+                {
+                    if (type == unionType)
+                    {
+                        JsonSerializer.Serialize(writer, value, options);
+                        return;
+                    }
+                }
+
+                throw new Exception("Failed to serialize union");
+            }
         }
 
         private static void Main(string[] args)
@@ -46,10 +87,9 @@ namespace CSharpUnions
                 Value = "TrumpMcDonaldz"
             };
 
-            // This throws, there's pending support for deserializing unions: https://github.com/dotnet/runtime/issues/127299
             var container = JsonSerializer.Deserialize<StringOrIntContainer>(JsonSerializer.Serialize(containerDyn));
 
-            Console.WriteLine($"Deserialized value: {container.Value}");
+            Console.WriteLine($"Deserialized value: {container.Value.Value}");
         }
     }
 }
