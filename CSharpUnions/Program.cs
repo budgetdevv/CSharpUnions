@@ -4,13 +4,15 @@ namespace CSharpUnions
 {
     internal static class Program
     {
-        public union StringOrInt(string, int);
+        private union StringOrInt(string, int);
+
+        private union StringOrIntOrBool(StringOrInt, bool);
 
         private static void Main(string[] args)
         {
             // Assigning to union var
 
-            StringOrInt x;
+            StringOrIntOrBool x;
 
             x = "TrumpMcDonaldz";
 
@@ -20,9 +22,13 @@ namespace CSharpUnions
 
             Console.WriteLine(x.Value);
 
+            x = true;
+
+            Console.WriteLine(x.Value);
+
             // Let's see what methods the union type has
 
-            var methods = typeof(StringOrInt).GetMethods((BindingFlags) (-1));
+            var methods = typeof(StringOrIntOrBool).GetMethods((BindingFlags) (-1));
 
             Console.WriteLine($"Methods of {nameof(StringOrInt)}:\n");
 
